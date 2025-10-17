@@ -8,6 +8,9 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxt/fonts',
     '@nuxtjs/tailwindcss',
+    "@yuta-inoue-ph/nuxt-vcalendar",
+    "@vee-validate/nuxt",
+    "vue-sonner/nuxt"
   ],
 
   css: ['~~/assets/css/tailwind.css'],
@@ -17,6 +20,10 @@ export default defineNuxtConfig({
     imports: [{
       from: 'tailwind-variants',
       name: 'tv',
+    }, {
+      from: 'vue-sonner',
+      name: 'toast',
+      as: 'useSonner',
     }],
   },
 
@@ -32,7 +39,20 @@ export default defineNuxtConfig({
     fetchTimeout: 2000,
     serverBundle: 'local',
   },
+
   tailwindcss: {
     // explicit empty config to satisfy TS
+  },
+
+  app: {
+    head: {
+      script: [{
+        src: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js',
+        defer: true,
+      }, {
+        src: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/vfs_fonts.min.js',
+        defer: true,
+      }],
+    },
   },
 })
