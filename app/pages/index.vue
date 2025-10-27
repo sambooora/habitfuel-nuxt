@@ -32,11 +32,10 @@ const posts = [
 
 <template>
   <div class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-    <!-- Header -->
-    <Header />
 
     <!-- Hero -->
-    <section class="py-20 md:py-28">
+    <section class="relative overflow-hidden py-20 md:py-28">
+      <UiBackgroundsFallingStars class="absolute inset-0 rounded-lg" />
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div class="mx-auto max-w-3xl">
           <h1 class="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
@@ -46,7 +45,7 @@ const posts = [
             Aplikasi produktivitas yang menggabungkan task management, Pomodoro timer, dan statistik kinerja untuk bantu kamu jadi versi terbaik setiap har
           </p>
           <div class="mt-8 flex justify-center gap-4">
-            <UiButton size="lg" variant="green">Mulai Gratis</UiButton>
+            <UiButton  v-gsap.magnetic size="lg" variant="green">Mulai Gratis</UiButton>
           </div>
         </div>
       </div>
@@ -58,7 +57,7 @@ const posts = [
         <div class="text-center mb-6">
           <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Fitur Utama</h2>
         </div>
-        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div v-gsap.whenVisible.stagger.from="{ opacity: 0, y: 50, stagger: 0.4 }" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <UiCard
             v-for="post in posts"
             :key="post.id"
@@ -76,7 +75,7 @@ const posts = [
     </section>
 
     <!-- CTA -->
-    <section class="py-20 md:py-28">
+    <section  v-gsap.whenVisible.from="{ autoAlpha: 0, start: 'top 60%', end: 'bottom 40%' }" class="py-20 md:py-28 h-screen flex flex-col justify-center items-center">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Ready to get started?</h2>
         <p class="mx-auto mt-3 max-w-xl text-gray-600 dark:text-gray-400">
@@ -87,8 +86,5 @@ const posts = [
         </div>
       </div>
     </section>
-
-    <!-- Footer -->
-    <Footer />
   </div>
 </template>

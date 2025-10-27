@@ -84,3 +84,20 @@ export function useTasks() {
     incrementActiveTaskFocus,
   }
 }
+
+export function useTasksRealtime() {
+  const { $supabase } = useNuxtApp()
+  const userId = useState<string>('auth:userId') // set after login
+  const channel = $supabase.channel('tasks-realtime')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'Task',
+      filter: `userId=eq.${userId.value}`,
+    }, (_payload) => {
+      // Re-fetch from API; server will decrypt titles
+      $fetch('/api/tasks')
+    })
+    .subscribe()
+  onBeforeUnmount(() => channel.unsubscribe())
+}

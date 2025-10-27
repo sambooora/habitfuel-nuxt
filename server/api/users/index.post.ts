@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import type { User } from '@prisma/client'
+import { requireAuthUser } from '~~/server/utils/auth'
 
 const prisma = new PrismaClient()
 
@@ -9,6 +10,7 @@ interface CreateUserBody {
 }
 
 export default defineEventHandler(async (event): Promise<User> => {
-  const body = await readBody<CreateUserBody>(event)
-  return await prisma.user.create({ data: body })
+  // Returns authenticated user, creating if first-time
+  const user = await requireAuthUser(event)
+  return user
 })

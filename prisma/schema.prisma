@@ -8,9 +8,63 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum PeriodType {
+  DAY
+  WEEK
+  MONTH
+}
+
 model User {
   id        String   @id @default(uuid())
+  authId    String?  @unique
   email     String   @unique
   name      String?
   createdAt DateTime @default(now())
+
+  tasks      Task[]
+  statistics Statistic[]
+  settings   Setting[]
+}
+
+model Task {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  titleEncrypted String
+  done           Boolean  @default(false)
+  focusSessions  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Statistic {
+  id                    String     @id @default(uuid())
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodType            PeriodType
+  periodStart           DateTime
+  workSessionsCompleted Int        @default(0)
+  elapsedWorkSeconds    Int        @default(0)
+  tasksCompleted        Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@unique([userId, periodType, periodStart])
+  @@index([userId])
+}
+
+model Setting {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workDuration       Int      @default(1500)
+  shortBreakDuration Int      @default(300)
+  longBreakDuration  Int      @default(900)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId, active])
 }

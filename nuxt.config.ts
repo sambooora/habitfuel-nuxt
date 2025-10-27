@@ -10,7 +10,9 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     "@yuta-inoue-ph/nuxt-vcalendar",
     "@vee-validate/nuxt",
-    "vue-sonner/nuxt"
+    "vue-sonner/nuxt",
+    "v-gsap-nuxt"
+
   ],
 
   css: ['~~/assets/css/tailwind.css'],
@@ -59,6 +61,9 @@ export default defineNuxtConfig({
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,
+    },
+    private: {
+      encryptionKey: process.env.NUXT_ENCRYPTION_KEY,
     },
   },
 })

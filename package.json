@@ -41,6 +41,7 @@
     "reka-ui": "^2.5.1",
     "tailwind-merge": "^3.3.1",
     "tailwind-variants": "^3.1.1",
+    "v-gsap-nuxt": "^1.4.4",
     "vaul-vue": "^0.4.1",
     "vue": "^3.5.22",
     "vue-currency-input": "^3.2.1",
