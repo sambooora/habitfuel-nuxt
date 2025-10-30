@@ -1,3 +1,22 @@
+<script setup lang="ts">
+definePageMeta({
+  layout: 'auth',
+  title: 'Sign Up',
+})
+const { $supabase } = useNuxtApp()
+const email = ref<string>('')
+const password = ref<string>('')
+
+const signup = async (): Promise<void> => {
+  if (!$supabase) throw new Error('Supabase client not available')
+  const { error } = await ($supabase as any).auth.signUp({
+    email: email.value,
+    password: password.value
+  })
+  if (error) alert(error.message)
+  else navigateTo('/dashboard')
+}
+</script>
 <template>
   <div class="max-w-sm mx-auto mt-20 p-6 border rounded-lg shadow">
     <h1 class="text-2xl font-bold mb-4">Sign Up</h1>
@@ -12,18 +31,3 @@
     </p>
   </div>
 </template>
-
-<script setup lang="ts">
-const { $supabase } = useNuxtApp()
-const email = ref<string>('')
-const password = ref<string>('')
-
-const signup = async (): Promise<void> => {
-  const { error } = await $supabase.auth.signUp({
-    email: email.value,
-    password: password.value
-  })
-  if (error) alert(error.message)
-  else navigateTo('/dashboard')
-}
-</script>

@@ -1,22 +1,33 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { usePomodoro } from '~/composables/usePomodoro'
 
 const pomodoro = usePomodoro()
 const radius = 80
 const circumference = 2 * Math.PI * radius
 const strokeDashoffset = computed(() => circumference * (1 - pomodoro.progress.value))
 
-function modeLabel(m: 'work' | 'short' | 'long') {
-  if (m === 'work') return 'Fokus'
-  if (m === 'short') return 'Istirahat Pendek'
-  return 'Istirahat Panjang'
-}
-function modeBadgeClass(m: 'work' | 'short' | 'long') {
-  if (m === 'work') return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
-  if (m === 'short') return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
-  return 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200'
-}
+  // Dropdown pilihan durasi (menit) + handler
+  const durationChoices = [10, 15, 20, 25]
+  const selectedMinutes = ref<number>(Math.round(Number(pomodoro.workDuration.value) / 60))
+
+  function onDurationChange(e: Event) {
+    const v = Number((e.target as HTMLSelectElement).value)
+    const res = pomodoro.setWorkDurationChoice(v)
+    // Sinkronkan v-model ke state aktual (jaga konsistensi saat validasi gagal)
+    selectedMinutes.value = Math.round(Number(pomodoro.workDuration.value) / 60)
+    // Opsional: tampilkan feedback ke user (toast/alert) — bisa ditambahkan nanti
+    // console.log(res.message)
+  }
+
+  function modeLabel(m: 'work' | 'short' | 'long') {
+    if (m === 'work') return 'Fokus'
+    if (m === 'short') return 'Istirahat Pendek'
+    return 'Istirahat Panjang'
+  }
+  function modeBadgeClass(m: 'work' | 'short' | 'long') {
+    if (m === 'work') return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
+    if (m === 'short') return 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+    return 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200'
+  }
 </script>
 
 <template>
@@ -28,8 +39,22 @@ function modeBadgeClass(m: 'work' | 'short' | 'long') {
         :class="modeBadgeClass(pomodoro.mode.value)"
       >
         <Icon name="ph:clock" class="size-4" />
-{{ modeLabel(pomodoro.mode.value) }}
+        {{ modeLabel(pomodoro.mode.value) }}
       </span>
+    </div>
+
+    <!-- Pilihan durasi kerja -->
+    <div class="mt-4 md:mt-6 w-full">
+      <label class="block text-xs md:text-sm mb-1">Durasi Kerja per Sesi</label>
+      <select
+        class="w-full md:w-auto border rounded px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-700"
+        :value="selectedMinutes"
+        @change="onDurationChange"
+      >
+        <option v-for="m in durationChoices" :key="m" :value="m">
+          {{ m }} menit
+        </option>
+      </select>
     </div>
 
     <div class="mt-4 md:mt-6 flex flex-col items-center">
@@ -49,9 +74,9 @@ function modeBadgeClass(m: 'work' | 'short' | 'long') {
 
       <!-- Controls -->
       <div class="mt-6 flex flex-wrap gap-3">
-        <button @click="pomodoro.start" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Start</button>
-        <button @click="pomodoro.pause" class="px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600">Pause</button>
-        <button @click="pomodoro.reset()" class="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700">Reset</button>
+        <UiButton :disabled="pomodoro.isRunning.value" @click="pomodoro.start" variant="green">Start</UiButton>
+        <UiButton @click="pomodoro.pause" variant="yellow">Pause</UiButton>
+        <UiButton @click="pomodoro.reset()" variant="outline">Reset</UiButton>
       </div>
 
       <!-- Durasi ringkas -->

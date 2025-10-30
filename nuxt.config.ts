@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxt/icon',
     '@nuxt/fonts',
+    "@vee-validate/nuxt",
     '@nuxtjs/tailwindcss',
     "@yuta-inoue-ph/nuxt-vcalendar",
     "@vee-validate/nuxt",
@@ -27,6 +28,22 @@ export default defineNuxtConfig({
       name: 'toast',
       as: 'useSonner',
     }],
+    // Auto-import tambahan untuk zod & vee-validate
+    presets: [
+      {
+        from: 'zod',
+        imports: ['z'],
+      },
+      {
+        from: '@vee-validate/zod',
+        imports: ['toTypedSchema'],
+      },
+      {
+        from: 'vee-validate',
+        imports: ['useIsSubmitting'],
+      },
+    ],
+
   },
 
   colorMode: {

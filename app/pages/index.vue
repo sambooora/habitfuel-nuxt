@@ -57,7 +57,7 @@ const posts = [
         <div class="text-center mb-6">
           <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Fitur Utama</h2>
         </div>
-        <div v-gsap.whenVisible.stagger.from="{ opacity: 0, y: 50, stagger: 0.4 }" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <UiCard
             v-for="post in posts"
             :key="post.id"

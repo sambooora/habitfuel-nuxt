@@ -122,6 +122,48 @@ export function usePomodoro() {
     reset(mode.value)
   }
 
+  // Pilihan durasi kerja (menit) yang diperbolehkan untuk dropdown
+  const WORK_DURATION_CHOICES = [10, 15, 20, 25] as const
+
+  /**
+   * setWorkDurationChoice
+   * Mengatur durasi kerja berdasarkan pilihan menit yang valid (10, 15, 20, 25).
+   *
+   * Parameter:
+   * - minutes: number — durasi kerja dalam menit yang dipilih dari dropdown.
+   *
+   * Nilai return:
+   * - { success: boolean; message: string }
+   *   success: true jika durasi berhasil diterapkan, false jika gagal/invalid.
+   *   message: pesan singkat terkait hasil validasi/aplikasi.
+   *
+   * Cara penggunaan:
+   * - Panggil dari UI select: setWorkDurationChoice(selectedMinutes)
+   * - Durasi akan dipersist lewat localStorage (via watch yang sudah ada).
+   * - Timer akan di-reset ke mode 'work' agar durasi baru langsung diterapkan.
+   */
+  function setWorkDurationChoice(minutes: number): { success: boolean; message: string } {
+    // Validasi tipe
+    if (typeof minutes !== 'number' || Number.isNaN(minutes)) {
+      return { success: false, message: 'Input durasi tidak valid.' }
+    }
+    // Validasi pilihan yang diperbolehkan
+    if (!WORK_DURATION_CHOICES.includes(minutes as (typeof WORK_DURATION_CHOICES)[number])) {
+      return { success: false, message: 'Pilihan durasi tidak diperbolehkan.' }
+    }
+
+    const nextSeconds = minutes * 60
+    if (workDuration.value === nextSeconds) {
+      // Tidak ada perubahan, tetap dianggap sukses agar UI tidak error
+      return { success: true, message: 'Durasi kerja tidak berubah.' }
+    }
+
+    // Terapkan durasi dan reset timer ke mode kerja
+    workDuration.value = nextSeconds
+    reset('work') // pause + set remaining ke durasi kerja terbaru
+    return { success: true, message: 'Durasi kerja berhasil diterapkan.' }
+  }
+
   // Persist selected state ke localStorage
   if (process.client) {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -184,6 +226,8 @@ export function usePomodoro() {
     pause,
     reset,
     setDurations,
+    // fungsi baru untuk pilihan durasi kerja
+    setWorkDurationChoice,
     // ganti event hooks
     setOnWorkSessionComplete,
   }

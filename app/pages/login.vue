@@ -1,28 +1,62 @@
 <script setup lang="ts">
-const { $supabase } = useNuxtApp()
-const email = ref<string>('')
-const password = ref<string>('')
 
-const login = async (): Promise<void> => {
-  const { error } = await $supabase.auth.signInWithPassword({
-    email: email.value,
-    password: password.value
+definePageMeta({
+  layout: 'auth',
+  title: 'Login',
+})
+const { $supabase } = useNuxtApp()
+
+  useSeoMeta({
+    title: "Log in",
+    description: "Enter your email & password to log in.",
+  });
+
+  const { handleSubmit } = useForm({
+  validationSchema: toTypedSchema(z.object({
+    email: z.string().min(1),
+    password: z.string().min(8).max(32),
+  })),
+  keepValuesOnUnmount: true,
+})
+
+  const isSubmitting = useIsSubmitting()
+
+  
+
+  const login = handleSubmit( async (values): Promise<void> => {
+  if (!$supabase) throw new Error('Supabase client not available')
+  const { error } = await ($supabase as any).auth.signInWithPassword({
+    email: values.email,
+    password: values.password
   })
   if (error) alert(error.message)
   else navigateTo('/dashboard')
-}
+});
 </script>
+
 <template>
-  <div class="max-w-sm mx-auto mt-20 p-6 border rounded-lg shadow">
-    <h1 class="text-2xl font-bold mb-4">Login</h1>
-    <form @submit.prevent="login">
-      <input v-model="email" type="email" placeholder="Email" class="border p-2 w-full mb-2 rounded" />
-      <input v-model="password" type="password" placeholder="Password" class="border p-2 w-full mb-4 rounded" />
-      <button class="bg-blue-600 text-white p-2 w-full rounded hover:bg-blue-700">Login</button>
-    </form>
-    <p class="text-sm mt-3 text-center">
-      Belum punya akun?
-      <NuxtLink to="/signup" class="text-blue-600 underline">Sign up</NuxtLink>
-    </p>
-  </div>
+    <div class="border border-muted-foreground rounded-lg p-5">
+      <h1 class="text-2xl font-bold tracking-tight lg:text-3xl">Log in</h1>
+      <p class="mt-1 text-muted-foreground">Enter your email & password to log in.</p>
+
+      <form class="mt-10" @submit="login">
+        <fieldset :disabled="isSubmitting" class="grid gap-5">
+          <div>
+            <UiVeeInput label="Email" type="email" name="email" placeholder="john@example.com" />
+          </div>
+          <div>
+            <UiVeeInput label="Password" type="password" name="password" />
+          </div>
+          <div>
+            <UiButton variant="green" class="w-full" type="submit" text="Log in" />
+          </div>
+        </fieldset>
+      </form>
+      <p class="mt-4 text-sm text-muted-foreground">
+        Don't have an account?
+        <NuxtLink class="font-semibold text-primary underline-offset-2 hover:underline" to="/signup"
+          >Create account</NuxtLink
+        >
+      </p>
+    </div>
 </template>

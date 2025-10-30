@@ -47,6 +47,44 @@ export function useTasks() {
     if (t) t.done = !t.done
   }
 
+  // Tambahan: update judul task dengan validasi dan status hasil
+  function updateTaskTitle(id: string, newTitle: string): { success: boolean; message: string } {
+    const TITLE_MIN = 3
+    const TITLE_MAX = 120
+    try {
+      const trimmed = (newTitle ?? '').trim()
+
+      if (!id || typeof id !== 'string') {
+        return { success: false, message: 'ID task tidak valid.' }
+      }
+
+      const idx = tasks.value.findIndex(t => t.id === id)
+      if (idx < 0) {
+        return { success: false, message: 'Task tidak ditemukan.' }
+      }
+
+      if (!trimmed) {
+        return { success: false, message: 'Judul baru tidak boleh kosong.' }
+      }
+      if (trimmed.length < TITLE_MIN) {
+        return { success: false, message: `Judul minimal ${TITLE_MIN} karakter.` }
+      }
+      if (trimmed.length > TITLE_MAX) {
+        return { success: false, message: `Judul maksimal ${TITLE_MAX} karakter.` }
+      }
+
+      const current = tasks.value[idx]
+      if (current && current.title === trimmed) {
+        return { success: true, message: 'Tidak ada perubahan judul.' }
+      }
+
+      if (current) current.title = trimmed
+      return { success: true, message: 'Judul task berhasil diperbarui.' }
+    } catch {
+      return { success: false, message: 'Gagal memperbarui judul task.' }
+    }
+  }
+
   function incrementActiveTaskFocus() {
     const t = tasks.value.find(t => t.id === activeTaskId.value)
     if (t) t.focusSessions += 1
@@ -81,6 +119,7 @@ export function useTasks() {
     removeTask,
     setActive,
     toggleDone,
+    updateTaskTitle,
     incrementActiveTaskFocus,
   }
 }
@@ -88,13 +127,13 @@ export function useTasks() {
 export function useTasksRealtime() {
   const { $supabase } = useNuxtApp()
   const userId = useState<string>('auth:userId') // set after login
-  const channel = $supabase.channel('tasks-realtime')
+  const channel = ($supabase as any)?.channel('tasks-realtime')
     .on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'Task',
       filter: `userId=eq.${userId.value}`,
-    }, (_payload) => {
+    }, (_payload: any) => {
       // Re-fetch from API; server will decrypt titles
       $fetch('/api/tasks')
     })
