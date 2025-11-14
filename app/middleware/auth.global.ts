@@ -38,6 +38,14 @@ export default defineNuxtRouteMiddleware(async (to: any) => {
     !!(session && session.user && session.expires_at && session.expires_at * 1000 > Date.now())
   const hasCorruptSession = !!(session && !isSessionValid)
 
+  // Set user ID in state if session is valid
+  if (isSessionValid && session.user) {
+    useState('auth:userId', () => session.user.id)
+    console.log('User ID set in state:', session.user.id)
+  } else {
+    console.log('No valid session or user, user ID not set')
+  }
+
   // Cegah redirect loop jika Nuxt mendeteksi redirectFrom == current
   if (to.redirectedFrom && to.redirectedFrom.fullPath === to.fullPath) {
     return abortNavigation()

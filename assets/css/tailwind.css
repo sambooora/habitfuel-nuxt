@@ -1,7 +1,7 @@
+@import "tw-animate-css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "tw-animate-css";
 @plugin "@tailwindcss/forms" {
   strategy: "class";
 }
@@ -152,6 +152,33 @@
 button:not(:disabled),
 [role="button"]:not(:disabled) {
   cursor: pointer;
+}
+
+:root {
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #6b7280;
+  --card: #f9fafb;
+  --border: #e5e7eb;
+}
+
+.dark {
+  --bg: #0b1220;
+  --fg: #e5e7eb;
+  --muted: #9ca3af;
+  --card: #111827;
+  --border: #1f2937;
+}
+
+/* Global apply agar seluruh komponen ikut berubah */
+html, body {
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+/* Transisi tema halus tanpa flicker */
+.theme-transition {
+  transition: background-color 300ms ease, color 300ms ease;
 }
 
 

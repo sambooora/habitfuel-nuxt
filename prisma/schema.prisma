@@ -14,6 +14,72 @@ enum PeriodType {
   MONTH
 }
 
+enum TransactionType {
+  INCOME
+  EXPENSE
+  INVESTMENT
+  DEBT_PAYMENT
+  ASSET_PURCHASE
+  ASSET_SALE
+}
+
+enum TransactionCategory {
+  SALARY
+  FREELANCE
+  BUSINESS
+  INVESTMENT_RETURN
+  RENTAL
+  OTHER_INCOME
+  FOOD
+  TRANSPORTATION
+  UTILITIES
+  ENTERTAINMENT
+  HEALTHCARE
+  EDUCATION
+  SHOPPING
+  HOUSING
+  INSURANCE
+  TAX
+  OTHER_EXPENSE
+}
+
+enum InvestmentType {
+  STOCK
+  BOND
+  MUTUAL_FUND
+  ETF
+  REAL_ESTATE
+  CRYPTO
+  COMMODITY
+  OTHER
+}
+
+enum DebtStatus {
+  ACTIVE
+  PAID
+  OVERDUE
+  DEFAULTED
+}
+
+enum AssetType {
+  REAL_ESTATE
+  VEHICLE
+  INVESTMENT
+  CASH
+  BANK_ACCOUNT
+  DIGITAL_ASSET
+  PRECIOUS_METAL
+  OTHER
+}
+
+enum AssetStatus {
+  ACTIVE
+  SOLD
+  DEPRECIATED
+  DAMAGED
+  LOST
+}
+
 model User {
   id        String   @id @default(uuid())
   authId    String?  @unique
@@ -21,9 +87,14 @@ model User {
   name      String?
   createdAt DateTime @default(now())
 
-  tasks      Task[]
-  statistics Statistic[]
-  settings   Setting[]
+  tasks          Task[]
+  statistics     Statistic[]
+  settings       Setting[]
+  transactions   Transaction[]
+  investments    Investment[]
+  debts          Debt[]
+  assets         Asset[]
+  categories     Category[]
 }
 
 model Task {
@@ -67,4 +138,123 @@ model Setting {
   updatedAt          DateTime @updatedAt
 
   @@index([userId, active])
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  type        TransactionType
+  color       String?  @default("#6366f1")
+  icon        String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@unique([userId, name, type])
+  @@index([userId])
+}
+
+model Transaction {
+  id          String             @id @default(uuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  type        TransactionType
+  amount      Decimal            @db.Decimal(15, 2)
+  description String?
+  date        DateTime
+  isRecurring Boolean            @default(false)
+  recurrenceInterval String?     // daily, weekly, monthly, yearly
+  recurrenceEndDate  DateTime?   
+  tags        String[]           @default([])
+  attachments String[]           @default([])
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+}
+
+model Investment {
+  id                String         @id @default(uuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              InvestmentType
+  name              String
+  symbol            String?        // For stocks, crypto, etc.
+  quantity          Decimal?       @db.Decimal(15, 6)
+  purchasePrice     Decimal        @db.Decimal(15, 2)
+  currentPrice      Decimal?       @db.Decimal(15, 2)
+  totalInvested     Decimal        @db.Decimal(15, 2)
+  currentValue      Decimal?       @db.Decimal(15, 2)
+  purchaseDate      DateTime
+  broker            String?
+  notes             String?
+  isActive          Boolean        @default(true)
+  tags              String[]       @default([])
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([isActive])
+}
+
+model Debt {
+  id                  String     @id @default(uuid())
+  userId              String
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lenderName          String
+  principalAmount     Decimal    @db.Decimal(15, 2)
+  interestRate        Decimal?   @db.Decimal(5, 2) // Annual percentage rate
+  currentBalance      Decimal    @db.Decimal(15, 2)
+  monthlyPayment      Decimal?   @db.Decimal(15, 2)
+  totalPayments       Decimal    @db.Decimal(15, 2) @default(0)
+  startDate           DateTime
+  dueDate             DateTime?
+  nextPaymentDate     DateTime?
+  status              DebtStatus @default(ACTIVE)
+  collateral          String?
+  notes               String?
+  tags                String[]   @default([])
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([nextPaymentDate])
+}
+
+model Asset {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            AssetType
+  name            String
+  description     String?
+  purchasePrice   Decimal      @db.Decimal(15, 2)
+  currentValue    Decimal?     @db.Decimal(15, 2)
+  purchaseDate    DateTime
+  depreciationRate Decimal?    @db.Decimal(5, 2) // Annual depreciation percentage
+  status          AssetStatus  @default(ACTIVE)
+  location        String?
+  serialNumber    String?
+  warrantyExpiry  DateTime?
+  insuranceInfo   String?
+  notes           String?
+  tags            String[]     @default([])
+  attachments     String[]     @default([])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([userId, status])
 }

@@ -74,9 +74,15 @@ const strokeDashoffset = computed(() => circumference * (1 - pomodoro.progress.v
 
       <!-- Controls -->
       <div class="mt-6 flex flex-wrap gap-3">
-        <UiButton :disabled="pomodoro.isRunning.value" @click="pomodoro.start" variant="green">Start</UiButton>
-        <UiButton @click="pomodoro.pause" variant="yellow">Pause</UiButton>
-        <UiButton @click="pomodoro.reset()" variant="outline">Reset</UiButton>
+        <UiButton :disabled="pomodoro.isRunning.value" size="icon-sm" @click="pomodoro.start" variant="green">
+          <Icon name="ph:play" class="size-5" />
+        </UiButton>
+        <UiButton :disabled="!pomodoro.isRunning.value" size="icon-sm" @click="pomodoro.pause" variant="yellow">
+          <Icon name="ph:pause" class="size-5" />
+        </UiButton>
+        <UiButton @click="pomodoro.reset()" size="icon-sm" variant="outline">
+          <Icon name="ph:repeat" class="size-5" />
+        </UiButton>
       </div>
 
       <!-- Durasi ringkas -->

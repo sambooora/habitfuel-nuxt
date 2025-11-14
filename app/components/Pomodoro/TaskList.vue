@@ -30,7 +30,7 @@ const safeTasks = computed(() => tasksApi.tasks.value.filter(Boolean))
 
     <form @submit.prevent="add" class="flex gap-2 mb-4">
       <input v-model="newTitle" placeholder="Tugas baru..." class="border p-2 flex-1 rounded dark:bg-gray-800 dark:border-gray-700" />
-      <UiButton class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Tambah</UiButton>
+      <UiButton type="submit" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Tambah</UiButton>
     </form>
 
     <ul class="space-y-2">
@@ -51,23 +51,26 @@ const safeTasks = computed(() => tasksApi.tasks.value.filter(Boolean))
   
           <div class="flex items-center gap-2">
             <UiButton
-              :class="t.done ? 'bg-gray-200 dark:bg-gray-700' : 'bg-violet-600 text-white hover:bg-violet-700'"
+              size="icon-sm"
+              :class="t.done ? 'bg-green-200 dark:bg-green-700' : 'bg-gray-600 text-white hover:bg-gray-700'"
               @click="tasksApi.toggleDone(t.id)"
             >
-              {{ t.done ? 'Selesai ✓' : 'Tandai Selesai' }}
+              <Icon :name="t.done ? 'ph:check-bold' : 'ph:circle-bold'" class="size-5" />
             </UiButton>
-            <!-- Tambahan: tombol ubah judul -->
-            <UiButton class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600" @click="rename(t)">Ubah Judul</UiButton>
-            <UiButton class="bg-red-500 text-white hover:bg-red-600" @click="tasksApi.removeTask(t.id)">Hapus</UiButton>
+            <UiButton size="icon-sm" class="bg-blue-200 hover:bg-blue-300 dark:bg-blue-700 dark:hover:bg-blue-600" @click="rename(t)">
+              <Icon name="ph:pencil-bold" class="size-5" />
+            </UiButton>
+            <UiButton size="icon-sm" class="bg-red-500 text-white hover:bg-red-600" @click="tasksApi.removeTask(t.id)">
+              <Icon name="ph:trash-bold" class="size-5" />
+            </UiButton>
           </div>
         </div>
         <div class="flex items-center gap-3">
           <div>
-            <p class="font-medium">{{ t.title }}</p>
-            <p class="text-xs text-gray-600 dark:text-gray-400">Sesi fokus: {{ t.focusSessions }}</p>
+            <p class="font-medium" :class="t.done ? 'line-through text-gray-400 dark:text-gray-600' : 'text-gray-900 dark:text-gray-200'">{{ t.title }}</p>
+            <!-- <p class="text-xs text-gray-600 dark:text-gray-400">Sesi fokus: {{ t.focusSessions }}</p> -->
           </div>
         </div>
-        
       </li>
     </ul>
   </div>

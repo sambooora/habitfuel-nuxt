@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="styles({ class: props.class })">
+    <div :class="styles({ class: props.class })" v-if="props.data && props.data.length > 0 && props.columns && props.columns.length > 0">
       <UiTable :class="tableClass">
         <UiTableHeader>
           <UiTableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -57,6 +57,11 @@
           </UiTableEmpty>
         </UiTableBody>
       </UiTable>
+    </div>
+    <div v-else class="p-8 text-center text-gray-500">
+      <slot name="empty">
+        No data available.
+      </slot>
     </div>
 
     <div v-if="showPagination" class="@container">
@@ -283,7 +288,7 @@
     enableHiding: false,
   };
 
-  const localColumns: ColumnDef<T>[] = [...props.columns];
+  const localColumns: ColumnDef<T>[] = props.columns ? [...props.columns] : [];
 
   if (props.showSelect) {
     localColumns.unshift(checkBoxHeader);
@@ -307,7 +312,7 @@
 
   const table = useVueTable({
     get data() {
-      return props.data;
+      return props.data || [];
     },
     get columns() {
       return localColumns;

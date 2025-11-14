@@ -108,7 +108,7 @@
     @apply size-9 rounded-md;
   }
   .vc-focus {
-    @apply ring-ring/40 focus-within:shadow-none focus-visible:ring-2;
+    @apply ring-2 ring-blue-500/40 focus-within:shadow-none focus-visible:ring-2;
   }
   .vc-day {
     @apply mb-0.5;
@@ -133,16 +133,16 @@
     @apply rounded-r-md;
   }
   .vc-highlight-bg-light {
-    @apply bg-accent;
+    @apply bg-gray-100;
   }
   .vc-nav-item {
     @apply font-medium;
   }
   .vc-header .vc-title-wrapper {
-    @apply decoration-accent-foreground/60 underline-offset-2 hover:underline;
+    @apply underline underline-offset-2 hover:underline decoration-slate-400/60;
   }
   .vc-highlights + .vc-day-content {
-    @apply hover:bg-accent/5;
+    @apply hover:bg-gray-100/5;
   }
   .vc-time-header,
   .vc-time-select-group {

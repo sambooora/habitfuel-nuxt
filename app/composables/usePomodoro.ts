@@ -33,6 +33,77 @@ export function usePomodoro() {
 
   // Interval id (hanya di client)
   let intervalId: ReturnType<typeof setInterval> | null = null
+  let endAt: number | null = null
+  let wakeLock: any | null = null
+
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await (navigator as any).wakeLock.request('screen')
+        wakeLock.addEventListener?.('release', () => { wakeLock = null })
+      }
+    } catch { }
+  }
+
+  function start() {
+    if (isRunning.value) return
+    isRunning.value = true
+    endAt = Date.now() + remaining.value * 1000
+    requestWakeLock().catch(() => { })
+    if (intervalId) clearInterval(intervalId)
+    intervalId = setInterval(tick, 1000)
+  }
+
+  async function pause() {
+    isRunning.value = false
+    if (intervalId) {
+      clearInterval(intervalId)
+      intervalId = null
+    }
+    endAt = null
+    try {
+      await wakeLock?.release?.()
+    } catch { }
+    wakeLock = null
+  }
+
+  function reset(toMode: Mode = 'work') {
+    pause()
+    mode.value = toMode
+    remaining.value = toMode === 'work'
+      ? workDuration.value
+      : toMode === 'short'
+        ? shortBreakDuration.value
+        : longBreakDuration.value
+    endAt = null
+  }
+
+  function tick() {
+    if (!isRunning.value || !endAt) return
+    const secsLeft = Math.max(0, Math.ceil((endAt - Date.now()) / 1000))
+    const consumed = Math.max(0, remaining.value - secsLeft)
+    remaining.value = secsLeft
+    if (mode.value === 'work' && consumed > 0) {
+      elapsedWorkSeconds.value += consumed
+    }
+    if (secsLeft <= 0) {
+      if (mode.value === 'work') {
+        nextModeAfterWork()
+      } else {
+        nextModeAfterBreak()
+      }
+      endAt = Date.now() + remaining.value * 1000
+    }
+  }
+
+  if (process.client) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        if (isRunning.value && endAt) tick()
+        requestWakeLock().catch(() => { })
+      }
+    })
+  }
 
   const totalDuration = computed(() => {
     if (mode.value === 'work') return workDuration.value
@@ -48,30 +119,30 @@ export function usePomodoro() {
 
   const formattedTime = computed(() => formatMMSS(remaining.value))
 
-  function start() {
-    if (isRunning.value) return
-    isRunning.value = true
-    if (intervalId) clearInterval(intervalId)
-    intervalId = setInterval(tick, 1000)
-  }
+  // function start() {
+  //   if (isRunning.value) return
+  //   isRunning.value = true
+  //   if (intervalId) clearInterval(intervalId)
+  //   intervalId = setInterval(tick, 1000)
+  // }
 
-  function pause() {
-    isRunning.value = false
-    if (intervalId) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-  }
+  // function pause() {
+  //   isRunning.value = false
+  //   if (intervalId) {
+  //     clearInterval(intervalId)
+  //     intervalId = null
+  //   }
+  // }
 
-  function reset(toMode: Mode = 'work') {
-    pause()
-    mode.value = toMode
-    remaining.value = toMode === 'work'
-      ? workDuration.value
-      : toMode === 'short'
-        ? shortBreakDuration.value
-        : longBreakDuration.value
-  }
+  // function reset(toMode: Mode = 'work') {
+  //   pause()
+  //   mode.value = toMode
+  //   remaining.value = toMode === 'work'
+  //     ? workDuration.value
+  //     : toMode === 'short'
+  //       ? shortBreakDuration.value
+  //       : longBreakDuration.value
+  // }
 
   function nextModeAfterWork() {
     // Setelah 4 siklus kerja, istirahat panjang
@@ -93,26 +164,26 @@ export function usePomodoro() {
     remaining.value = workDuration.value
   }
 
-  function tick() {
-    if (!isRunning.value) return
-    if (remaining.value > 0) {
-      remaining.value -= 1
-      if (mode.value === 'work') {
-        elapsedWorkSeconds.value += 1
-      }
-      return
-    }
-    // Sesi selesai
-    if (mode.value === 'work') {
-      nextModeAfterWork()
-    } else {
-      nextModeAfterBreak()
-    }
-    // Auto-continue jika masih running
-    if (!intervalId) {
-      intervalId = setInterval(tick, 1000)
-    }
-  }
+  // function tick() {
+  //   if (!isRunning.value) return
+  //   if (remaining.value > 0) {
+  //     remaining.value -= 1
+  //     if (mode.value === 'work') {
+  //       elapsedWorkSeconds.value += 1
+  //     }
+  //     return
+  //   }
+  //   // Sesi selesai
+  //   if (mode.value === 'work') {
+  //     nextModeAfterWork()
+  //   } else {
+  //     nextModeAfterBreak()
+  //   }
+  //   // Auto-continue jika masih running
+  //   if (!intervalId) {
+  //     intervalId = setInterval(tick, 1000)
+  //   }
+  // }
 
   function setDurations(d: { work?: number; short?: number; long?: number }) {
     if (typeof d.work === 'number') workDuration.value = d.work

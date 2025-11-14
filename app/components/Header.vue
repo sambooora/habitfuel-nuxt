@@ -1,5 +1,5 @@
 
-<script lang="ts" setup>
+<script setup lang="ts">
 
  const miniLinks = [
     { name: "About us", href: "#" },
@@ -99,6 +99,9 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
+import { useTheme } from '~/composables/useTheme'
+
+const theme = useTheme()
 </script>
 
 <template>

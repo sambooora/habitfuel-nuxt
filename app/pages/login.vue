@@ -25,12 +25,18 @@ const { $supabase } = useNuxtApp()
 
   const login = handleSubmit( async (values): Promise<void> => {
   if (!$supabase) throw new Error('Supabase client not available')
-  const { error } = await ($supabase as any).auth.signInWithPassword({
+  const { error, data } = await ($supabase as any).auth.signInWithPassword({
     email: values.email,
     password: values.password
   })
   if (error) alert(error.message)
-  else navigateTo('/dashboard')
+  else {
+    // Set user ID in state after successful login
+    if (data?.user?.id) {
+      useState('auth:userId', () => data.user.id)
+    }
+    navigateTo('/dashboard')
+  }
 });
 </script>
 

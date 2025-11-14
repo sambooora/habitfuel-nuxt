@@ -1,87 +1,6 @@
 
 <script lang="ts" setup>
 const { $supabase } = useNuxtApp()
- const miniLinks = [
-    { name: "About us", href: "#" },
-    { name: "Press", href: "#" },
-    { name: "Careers", href: "#" },
-    { name: "Legal", href: "#" },
-    { name: "Support", href: "#" },
-    { name: "Contact", href: "#" },
-    { name: "Sitemap", href: "#" },
-    { name: "Cookie settings", href: "#" },
-  ];
-  const links = {
-    products: {
-      items: [
-        {
-          name: "Blog",
-          description: "The latest industry news, updates and info.",
-          icon: "lucide:book",
-          href: "#",
-        },
-        {
-          name: "About us",
-          description: "The latest industry news, updates and info.",
-          icon: "lucide:info",
-          href: "#",
-        },
-        {
-          name: "Video tutorials",
-          description: "All the information you need to know about our platform.",
-          icon: "lucide:play-circle",
-          href: "#",
-        },
-        {
-          name: "Customer stories",
-          description: "See how our customers use our platform to grow their business.",
-          icon: "lucide:sparkle",
-          href: "#",
-        },
-        {
-          name: "Help center",
-          description: "Get all your questions answered in our help center.",
-          icon: "lucide:life-buoy",
-          href: "#",
-        },
-      ],
-    },
-    resources: {
-      items: [
-        {
-          name: "About us",
-          description: "The latest industry news, updates and info.",
-          icon: "lucide:info",
-          href: "#",
-        },
-        {
-          name: "Customer stories",
-          description: "See how our customers use our platform to grow their business.",
-          icon: "lucide:sparkle",
-          href: "#",
-        },
-        {
-          name: "Video tutorials",
-          description: "All the information you need to know about our platform.",
-          icon: "lucide:play-circle",
-          href: "#",
-        },
-        {
-          name: "Help center",
-          description: "Get all your questions answered in our help center.",
-          icon: "lucide:life-buoy",
-          href: "#",
-        },
-        {
-          name: "Blog",
-          description: "The latest industry news, updates and info.",
-          icon: "lucide:book",
-          href: "#",
-        },
-      ],
-    },
-  };
-
 const isScrolled = ref(false)
 
 // Fungsi untuk mendeteksi scroll
@@ -106,17 +25,20 @@ const logout = async (): Promise<void> => {
   navigateTo('/login')
 }
 
+import { useTheme } from '~/composables/useTheme'
+
+const theme = useTheme()
 </script>
 
 <template>
   <div
-    class="sticky top-0 z-30"
+    class="sticky top-0 z-30 text-grey-800 dark:text-muted-foreground"
     :class="isScrolled ? 'px-[1rem] top-1 md:px-0' : ''"
   >
     <div
       :class="[
         'p-6 text-sm items-center transition-all duration-300',
-        isScrolled ? 'bg-gray-900 container px-3 rounded-full  m-[10px] shadow-md mx-auto' : 'bg-gray-900 border-b border-gray-800 w-full',
+        isScrolled ? 'container px-3 rounded-full  m-[10px] shadow-md mx-auto' : ' w-full',
       ]"
     >
       <div class="container mx-auto flex flex-col max-h-screen">
@@ -139,11 +61,28 @@ const logout = async (): Promise<void> => {
                 <UiButton to="/dashboard/pomodoro" variant="ghost" size="sm"> Pomodoro</UiButton>
               </UiNavigationMenuLink>
             </UiNavigationMenuItem>
+            <UiNavigationMenuItem>
+              <UiNavigationMenuLink as-child>
+                <UiButton to="/dashboard/finance" variant="ghost" size="sm"> Finance</UiButton>
+              </UiNavigationMenuLink>
+            </UiNavigationMenuItem>
           </UiNavigationMenuList>
           </UiNavigationMenu>
           <div class="lg:hidden">
             </div>
             <div class="hidden items-center gap-3 lg:flex">
+              <UiButton
+                  class="inline-flex items-center justify-center p-2 rounded-md transition-colors"
+                  @click="theme.toggleTheme()"
+                  aria-label="Toggle theme"
+                  title="Toggle theme"
+                >
+                  <Icon
+                    :name="theme.isDark.value ? 'ph:moon' : ' ph:sun'"
+                    class="size-5 transition-transform duration-200 text-grey-800 dark:text-muted-foreground"
+                    :class="theme.isDark.value ? 'rotate-0 scale-100' : 'rotate-180 scale-95'"
+                  />
+              </UiButton>
               <UiButton @click="logout" variant="destructive">Logout</UiButton>
             </div>
         </div>
