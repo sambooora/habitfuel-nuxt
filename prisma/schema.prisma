@@ -80,6 +80,21 @@ enum AssetStatus {
   LOST
 }
 
+enum AuditAction {
+  CREATE_TRANSACTION
+  UPDATE_TRANSACTION
+  DELETE_TRANSACTION
+  CREATE_INVESTMENT
+  UPDATE_INVESTMENT
+  DELETE_INVESTMENT
+  CREATE_DEBT
+  UPDATE_DEBT
+  DELETE_DEBT
+  CREATE_ASSET
+  UPDATE_ASSET
+  DELETE_ASSET
+}
+
 model User {
   id        String   @id @default(uuid())
   authId    String?  @unique
@@ -95,6 +110,7 @@ model User {
   debts          Debt[]
   assets         Asset[]
   categories     Category[]
+  auditLogs      AuditLog[]
 }
 
 model Task {
@@ -257,4 +273,19 @@ model Asset {
   @@index([userId])
   @@index([userId, type])
   @@index([userId, status])
+}
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action       AuditAction
+  resourceType String
+  resourceId   String
+  changes      Json?
+  timestamp    DateTime    @default(now())
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([resourceType, resourceId])
 }

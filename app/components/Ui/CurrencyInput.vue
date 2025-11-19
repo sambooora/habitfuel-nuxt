@@ -40,13 +40,17 @@
      * Whether the input is required
      */
     required?: boolean;
-    modelValue?: any;
+    modelValue?: number | null;
     /**
      * Options for the currency input
      *
      * @see https://dm4t2.github.io/vue-currency-input/config.html
      */
     options?: CurrencyInputOptions;
+  }>();
+
+  const emit = defineEmits<{
+    'update:modelValue': [value: number | null]
   }>();
 
   const { inputRef, formattedValue, numberValue, setOptions, setValue } = useCurrencyInput(
@@ -57,6 +61,18 @@
       hideGroupingSeparatorOnFocus: false,
     })
   );
+
+  // Watch for changes in numberValue and emit updates
+  watch(numberValue, (newValue) => {
+    emit('update:modelValue', newValue)
+  })
+
+  // Watch for modelValue changes and update the input
+  watch(() => props.modelValue, (newValue) => {
+    if (newValue !== numberValue.value) {
+      setValue(newValue)
+    }
+  })
 
   const forwarded = reactiveOmit(props, "class", "options", "id", "modelValue");
   const id = computed(() => props.id || `currency-input-${useId()}`);

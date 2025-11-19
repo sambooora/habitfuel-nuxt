@@ -8,7 +8,7 @@
       :is-dark="$colorMode.value == 'dark'"
     >
       <template v-for="(_, slot) in $slots" #[slot]="scope">
-        <slot :name="slot" v-bind="scope" />
+        <slot :name="slot as string" v-bind="scope" />
       </template>
     </VCalendar>
   </ClientOnly>
@@ -312,7 +312,7 @@
     @apply font-medium;
   }
   .vc-header .vc-title-wrapper {
-    @apply decoration-accent-foreground/60 underline-offset-2 hover:underline;
+    @apply decoration-accent-foreground/60/60 underline-offset-2 hover:underline;
   }
   .vc-highlights + .vc-day-content {
     @apply hover:bg-accent/5;

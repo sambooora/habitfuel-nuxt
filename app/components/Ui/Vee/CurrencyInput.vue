@@ -72,7 +72,7 @@
     icon?: string;
     hint?: string;
     disabled?: boolean;
-    modelValue?: string;
+    modelValue?: number | null;
     name?: string;
     id?: string;
     rules?: any;

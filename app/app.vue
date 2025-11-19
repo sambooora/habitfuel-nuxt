@@ -7,7 +7,7 @@
     </NuxtLayout>
 
     <ClientOnly>
-      <ToastProvider />
+      <Toaster />
     </ClientOnly>
   </div>
 </template>

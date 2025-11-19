@@ -155,12 +155,15 @@ export const useFinance = () => {
       console.log('Number of transactions:', response.transactions?.length)
       console.log('Number of categories:', state.categories?.length)
 
+      // Ensure categories array exists
+      const categories = state.categories || []
+      
       const enrichedTransactions = response.transactions.map((transaction: any, index: number) => {
         console.log(`Processing transaction ${index}:`, transaction)
 
         // Handle case where API returns categoryId but no category object
         if (transaction.categoryId && !transaction.category) {
-          const category = state.categories.find(cat => cat.id === transaction.categoryId)
+          const category = categories.find(cat => cat && cat.id === transaction.categoryId)
           console.log(`Looking for category ${transaction.categoryId}:`, category)
           if (category) {
             console.log(`Found category for transaction ${index}:`, category.name)
@@ -175,7 +178,7 @@ export const useFinance = () => {
 
         // Handle case where API returns category as a string (ID only)
         if (typeof transaction.category === 'string' && transaction.category) {
-          const category = state.categories.find(cat => cat.id === transaction.category)
+          const category = categories.find(cat => cat && cat.id === transaction.category)
           console.log(`Looking for category string ${transaction.category}:`, category)
           if (category) {
             console.log(`Found category for transaction ${index}:`, category.name)
@@ -190,7 +193,7 @@ export const useFinance = () => {
 
         // Handle case where API returns category object with only ID
         if (transaction.category && typeof transaction.category === 'object' && transaction.category.id && !transaction.category.name) {
-          const category = state.categories.find(cat => cat.id === transaction.category.id)
+          const category = categories.find(cat => cat && cat.id === transaction.category.id)
           console.log(`Looking for category object ID ${transaction.category.id}:`, category)
           if (category) {
             console.log(`Found category for transaction ${index}:`, category.name)
@@ -550,24 +553,334 @@ export const useFinance = () => {
     ])
   }
 
+  // Comprehensive Update Functions
+  const updateTransaction = async (id: string, data: Partial<CreateTransactionData>) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    state.loading = true
+    state.error = null
+
+    console.log('updateTransaction called with:', { id, data })
+
+    try {
+      // Prepare the request body - handle date strings properly
+      const requestBody = {
+        ...data,
+        // Only convert dates if they are Date objects, not if they're already strings
+        date: data.date instanceof Date ? data.date.toISOString() : data.date,
+        recurrenceEndDate: data.recurrenceEndDate instanceof Date ? data.recurrenceEndDate.toISOString() : data.recurrenceEndDate
+      }
+      
+      console.log('Sending PATCH request to:', `/api/finance/transactions/${id}`)
+      console.log('Request body:', requestBody)
+
+      const transaction = await $fetch(`/api/finance/transactions/${id}`, {
+        method: 'PATCH',
+        body: requestBody,
+        headers: await getAuthHeaders()
+      })
+
+      // Update the transaction in the state
+      const index = state.transactions.findIndex(t => t.id === id)
+      if (index !== -1) {
+        state.transactions[index] = transaction
+      }
+
+      $toast.success('Transaction updated successfully')
+      return transaction
+    } catch (error) {
+      state.error = 'Failed to update transaction'
+      console.error('Error updating transaction:', error)
+      $toast.error('Failed to update transaction. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  const updateInvestment = async (id: string, data: Partial<CreateInvestmentData>) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    state.loading = true
+    state.error = null
+
+    console.log('updateInvestment called with:', { id, data })
+
+    try {
+      // Prepare the request body - handle date strings properly
+      const requestBody = {
+        ...data,
+        // Only convert dates if they are Date objects, not if they're already strings
+        purchaseDate: data.purchaseDate instanceof Date ? data.purchaseDate.toISOString() : data.purchaseDate
+      }
+      
+      console.log('Sending PATCH request to:', `/api/finance/investments/${id}`)
+      console.log('Request body:', requestBody)
+
+      const investment = await $fetch(`/api/finance/investments/${id}`, {
+        method: 'PATCH',
+        body: requestBody,
+        headers: await getAuthHeaders()
+      })
+
+      // Update the investment in the state
+      const index = state.investments.findIndex(i => i.id === id)
+      if (index !== -1) {
+        state.investments[index] = investment
+      }
+
+      $toast.success('Investment updated successfully')
+      return investment
+    } catch (error) {
+      state.error = 'Failed to update investment'
+      console.error('Error updating investment:', error)
+      $toast.error('Failed to update investment. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  const updateDebt = async (id: string, data: Partial<CreateDebtData>) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    state.loading = true
+    state.error = null
+
+    console.log('updateDebt called with:', { id, data })
+
+    try {
+      // Prepare the request body - handle date strings properly
+      const requestBody = {
+        ...data,
+        // Only convert dates if they are Date objects, not if they're already strings
+        startDate: data.startDate instanceof Date ? data.startDate.toISOString() : data.startDate,
+        dueDate: data.dueDate instanceof Date ? data.dueDate.toISOString() : data.dueDate,
+        nextPaymentDate: data.nextPaymentDate instanceof Date ? data.nextPaymentDate.toISOString() : data.nextPaymentDate
+      }
+      
+      console.log('Sending PATCH request to:', `/api/finance/debts/${id}`)
+      console.log('Request body:', requestBody)
+
+      const debt = await $fetch(`/api/finance/debts/${id}`, {
+        method: 'PATCH',
+        body: requestBody,
+        headers: await getAuthHeaders()
+      })
+
+      // Update the debt in the state
+      const index = state.debts.findIndex(d => d.id === id)
+      if (index !== -1) {
+        state.debts[index] = debt
+      }
+
+      $toast.success('Debt updated successfully')
+      return debt
+    } catch (error) {
+      state.error = 'Failed to update debt'
+      console.error('Error updating debt:', error)
+      $toast.error('Failed to update debt. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  const updateAsset = async (id: string, data: Partial<CreateAssetData>) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    state.loading = true
+    state.error = null
+
+    console.log('updateAsset called with:', { id, data })
+
+    try {
+      // Prepare the request body - handle date strings properly
+      const requestBody = {
+        ...data,
+        // Only convert dates if they are Date objects, not if they're already strings
+        purchaseDate: data.purchaseDate instanceof Date ? data.purchaseDate.toISOString() : data.purchaseDate,
+        warrantyExpiry: data.warrantyExpiry instanceof Date ? data.warrantyExpiry.toISOString() : data.warrantyExpiry
+      }
+      
+      console.log('Sending PATCH request to:', `/api/finance/assets/${id}`)
+      console.log('Request body:', requestBody)
+
+      const asset = await $fetch(`/api/finance/assets/${id}`, {
+        method: 'PATCH',
+        body: requestBody,
+        headers: await getAuthHeaders()
+      })
+
+      // Update the asset in the state
+      const index = state.assets.findIndex(a => a.id === id)
+      if (index !== -1) {
+        state.assets[index] = asset
+      }
+
+      $toast.success('Asset updated successfully')
+      return asset
+    } catch (error) {
+      state.error = 'Failed to update asset'
+      console.error('Error updating asset:', error)
+      $toast.error('Failed to update asset. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  // Comprehensive Delete Functions with Confirmation
+  const deleteTransaction = async (id: string, confirm: boolean = false) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    if (!confirm) {
+      throw new Error('Deletion requires confirmation')
+    }
+
+    state.loading = true
+    state.error = null
+
+    try {
+      await $fetch(`/api/finance/transactions/${id}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
+      })
+
+      // Remove the transaction from the state
+      state.transactions = state.transactions.filter(t => t.id !== id)
+
+      $toast.success('Transaction deleted successfully')
+      return { success: true }
+    } catch (error) {
+      state.error = 'Failed to delete transaction'
+      console.error('Error deleting transaction:', error)
+      $toast.error('Failed to delete transaction. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  const deleteInvestment = async (id: string, confirm: boolean = false) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    if (!confirm) {
+      throw new Error('Deletion requires confirmation')
+    }
+
+    state.loading = true
+    state.error = null
+
+    try {
+      await $fetch(`/api/finance/investments/${id}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
+      })
+
+      // Remove the investment from the state
+      state.investments = state.investments.filter(i => i.id !== id)
+
+      $toast.success('Investment deleted successfully')
+      return { success: true }
+    } catch (error) {
+      state.error = 'Failed to delete investment'
+      console.error('Error deleting investment:', error)
+      $toast.error('Failed to delete investment. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  const deleteDebt = async (id: string, confirm: boolean = false) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    if (!confirm) {
+      throw new Error('Deletion requires confirmation')
+    }
+
+    state.loading = true
+    state.error = null
+
+    try {
+      await $fetch(`/api/finance/debts/${id}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
+      })
+
+      // Remove the debt from the state
+      state.debts = state.debts.filter(d => d.id !== id)
+
+      $toast.success('Debt deleted successfully')
+      return { success: true }
+    } catch (error) {
+      state.error = 'Failed to delete debt'
+      console.error('Error deleting debt:', error)
+      $toast.error('Failed to delete debt. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
+  const deleteAsset = async (id: string, confirm: boolean = false) => {
+    if (!userId.value) throw new Error('User not authenticated')
+
+    if (!confirm) {
+      throw new Error('Deletion requires confirmation')
+    }
+
+    state.loading = true
+    state.error = null
+
+    try {
+      await $fetch(`/api/finance/assets/${id}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders()
+      })
+
+      // Remove the asset from the state
+      state.assets = state.assets.filter(a => a.id !== id)
+
+      $toast.success('Asset deleted successfully')
+      return { success: true }
+    } catch (error) {
+      state.error = 'Failed to delete asset'
+      console.error('Error deleting asset:', error)
+      $toast.error('Failed to delete asset. Please try again.')
+      throw error
+    } finally {
+      state.loading = false
+    }
+  }
+
   return {
     state: readonly(state),
 
     // Transaction operations
     fetchTransactions,
     createTransaction,
+    updateTransaction,
+    deleteTransaction,
 
     // Investment operations
     fetchInvestments,
     createInvestment,
+    updateInvestment,
+    deleteInvestment,
 
     // Debt operations
     fetchDebts,
     createDebt,
+    updateDebt,
+    deleteDebt,
 
     // Asset operations
     fetchAssets,
     createAsset,
+    updateAsset,
+    deleteAsset,
 
     // Category operations
     fetchCategories,

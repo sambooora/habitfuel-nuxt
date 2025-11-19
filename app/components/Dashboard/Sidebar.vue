@@ -285,10 +285,25 @@ const handleNavigation = () => {
 
 const handleLogout = async () => {
   try {
-    await $fetch('/api/auth/logout', { method: 'POST' })
+    const { $supabase } = useNuxtApp()
+    const { data: { session } } = await ($supabase as any).auth.getSession()
+    
+    if (session?.access_token) {
+      await $fetch('/api/auth/logout', { 
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+    }
+    
+    // Clear local session and redirect to login
+    await ($supabase as any).auth.signOut()
     router.push('/login')
   } catch (error) {
     console.error('Logout failed:', error)
+    // Still redirect to login even if API call fails
+    router.push('/login')
   }
 }
 

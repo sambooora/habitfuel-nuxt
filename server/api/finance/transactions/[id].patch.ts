@@ -102,13 +102,20 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation error',
-        data: error.errors
+        data: error.issues
+      })
+    }
+    
+    if (error instanceof Error && 'statusCode' in error) {
+      throw createError({
+        statusCode: (error as any).statusCode,
+        statusMessage: error.message || 'Failed to update transaction'
       })
     }
     
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.message || 'Failed to update transaction'
+      statusCode: 500,
+      statusMessage: 'Failed to update transaction'
     })
   } finally {
     await prisma.$disconnect()

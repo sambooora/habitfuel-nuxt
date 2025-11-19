@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     const user = await requireAuthUser(event)
-    
+
     // Get transaction ID from route params
     const id = getRouterParam(event, 'id')
     if (!id) {
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Transaction ID is required'
       })
     }
-    
+
     // Verify transaction ownership
     const existingTransaction = await prisma.transaction.findFirst({
       where: {
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
         userId: user.id
       }
     })
-    
+
     if (!existingTransaction) {
       throw createError({
         statusCode: 404,
@@ -37,16 +37,23 @@ export default defineEventHandler(async (event) => {
       where: { id }
     })
 
-    return { 
-      success: true, 
-      message: 'Transaction deleted successfully' 
+    return {
+      success: true,
+      message: 'Transaction deleted successfully'
     }
   } catch (error) {
     console.error('Error deleting transaction:', error)
     
+    if (error instanceof Error && 'statusCode' in error) {
+      throw createError({
+        statusCode: (error as any).statusCode,
+        statusMessage: error.message || 'Failed to delete transaction'
+      })
+    }
+    
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.message || 'Failed to delete transaction'
+      statusCode: 500,
+      statusMessage: 'Failed to delete transaction'
     })
   } finally {
     await prisma.$disconnect()

@@ -2,9 +2,9 @@
   <UiDialog :open="modelValue" @update:open="$emit('update:modelValue', $event)">
     <UiDialogContent class="sm:max-w-[600px]">
       <UiDialogHeader>
-        <UiDialogTitle>Add New Asset</UiDialogTitle>
+        <UiDialogTitle>{{ modalTitle }}</UiDialogTitle>
         <UiDialogDescription>
-          Record a new asset. Fill in the details below.
+          {{ modalDescription }}
         </UiDialogDescription>
       </UiDialogHeader>
 
@@ -43,7 +43,7 @@
               <UiVeeTextarea
                 name="description"
                 placeholder="Enter description (optional)"
-                rows="2"
+                :rows="2"
               />
             </div>
           </div>
@@ -57,7 +57,6 @@
                 placeholder="Enter purchase price"
                 :options="{
                   currency: 'IDR',
-                  currencyDisplay: 'symbol'
                 }"
               />
             </div>
@@ -72,7 +71,6 @@
                 placeholder="Enter current value (optional)"
                 :options="{
                   currency: 'IDR',
-                  currencyDisplay: 'symbol'
                 }"
               />
             </div>
@@ -154,7 +152,7 @@
               <UiVeeTextarea
                 name="notes"
                 placeholder="Enter notes (optional)"
-                rows="3"
+                :rows="3"
               />
             </div>
           </div>
@@ -185,12 +183,12 @@
         </div>
 
         <UiDialogFooter>
-          <UiButton type="button" variant="outline" @click="$emit('update:modelValue', false)">
+          <UiButton type="button" variant="outline" @click="$emit('update:modelValue', false)" :disabled="isLoading">
             Cancel
           </UiButton>
-          <UiButton type="submit" :disabled="isSubmitting">
-            <Icon v-if="isSubmitting" name="svg-spinners:ring-resize" class="mr-2 h-4 w-4" />
-            {{ isSubmitting ? 'Saving...' : 'Save Asset' }}
+          <UiButton type="submit" :disabled="isLoading">
+            <Icon v-if="isLoading" name="svg-spinners:ring-resize" class="mr-2 h-4 w-4" />
+            {{ isLoading ? 'Saving...' : (isEditing ? 'Update Asset' : 'Save Asset') }}
           </UiButton>
         </UiDialogFooter>
       </form>
@@ -199,21 +197,48 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
+import { toast } from 'vue-sonner'
 
 interface Props {
   modelValue: boolean
+  editingItem?: {
+    id: string
+    type: string
+    name: string
+    description?: string
+    purchasePrice: number | { toNumber: () => number }
+    currentValue?: number | { toNumber: () => number }
+    purchaseDate: string | Date
+    depreciationRate?: number | { toNumber: () => number }
+    location?: string
+    serialNumber?: string
+    warrantyExpiry?: string | Date
+    insuranceInfo?: string
+    notes?: string
+    tags?: string[]
+    attachments?: any[]
+  } | null
 }
 
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save', data: any): void
+  (e: 'success', data: any): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+// State
+const isLoading = ref(false)
+
+// Computed properties for dynamic modal titles
+const isEditing = computed(() => !!props.editingItem)
+const modalTitle = computed(() => isEditing.value ? 'Edit Asset' : 'Add New Asset')
+const modalDescription = computed(() => isEditing.value ? 'Update asset details below.' : 'Record a new asset. Fill in the details below.')
 
 // Form schema
 const formSchema = toTypedSchema(z.object({
@@ -229,8 +254,8 @@ const formSchema = toTypedSchema(z.object({
   warrantyExpiry: z.date().optional(),
   insuranceInfo: z.string().optional(),
   notes: z.string().optional(),
-  tags: z.array(z.string()),
-  attachments: z.array(z.instanceof(File))
+  tags: z.array(z.string()).optional(),
+  attachments: z.array(z.instanceof(File)).optional()
 }).refine((data) => {
   if (data.currentValue && data.currentValue <= 0) {
     return false
@@ -245,7 +270,7 @@ const formSchema = toTypedSchema(z.object({
 }))
 
 // Form setup
-const { handleSubmit, isSubmitting, values } = useForm({
+const { handleSubmit, values, resetForm, setValues } = useForm({
   validationSchema: formSchema,
   initialValues: {
     type: 'OTHER',
@@ -277,6 +302,14 @@ const assetTypeOptions = [
   { label: 'Other', value: 'OTHER' }
 ]
 
+// Helper function to convert amount values
+const convertAmount = (value: number | { toNumber: () => number } | undefined): number => {
+  if (value === undefined || value === null) return 0
+  if (typeof value === 'number') return value
+  if (typeof value === 'object' && 'toNumber' in value) return value.toNumber()
+  return 0
+}
+
 // Methods
 const handleFileChange = (files?: File | FileList | File[] | null) => {
   const fileArray = files ? (Array.isArray(files) ? files : files instanceof FileList ? Array.from(files) : [files]) : []
@@ -285,10 +318,46 @@ const handleFileChange = (files?: File | FileList | File[] | null) => {
 }
 
 const onSubmit = handleSubmit(async (values) => {
+  isLoading.value = true
+  
   try {
+    // Get auth headers
+    const { $supabase } = useNuxtApp()
+    let { data: { session } } = await ($supabase as any).auth.getSession()
+    
+    if (!session?.access_token) {
+      toast.error('Please login to continue')
+      throw new Error('No authentication token available')
+    }
+    
+    // Check if token is expired and try to refresh
+    if (session.expires_at && session.expires_at * 1000 < Date.now()) {
+      try {
+        // Try to refresh the session
+        const { data: refreshData, error: refreshError } = await ($supabase as any).auth.refreshSession()
+        if (refreshError || !refreshData.session) {
+          toast.error('Session expired. Please login again.')
+          throw new Error('Session expired')
+        }
+        session = refreshData.session
+      } catch (refreshError) {
+        toast.error('Session expired. Please login again.')
+        throw new Error('Session expired')
+      }
+    }
+    
+    const headers = {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json'
+    }
+    
     const formData = {
-      ...values,
+      type: values.type,
+      name: values.name,
+      description: values.description || undefined,
+      purchasePrice: values.purchasePrice,
       currentValue: values.currentValue || undefined,
+      purchaseDate: values.purchaseDate,
       depreciationRate: values.depreciationRate || undefined,
       location: values.location || undefined,
       serialNumber: values.serialNumber || undefined,
@@ -297,18 +366,114 @@ const onSubmit = handleSubmit(async (values) => {
       notes: values.notes || undefined
     }
     
-    emit('save', formData)
+    // Clean up data for API - remove undefined values and ensure proper number conversion
+    const cleanData = Object.fromEntries(
+      Object.entries(formData).filter(([_, v]) => v !== undefined && v !== '')
+    )
+    delete (cleanData as any).attachments
+    delete (cleanData as any).tags
+    
+    // Ensure numeric fields are properly converted to numbers
+    const numericFields = ['purchasePrice', 'currentValue', 'depreciationRate']
+    numericFields.forEach(field => {
+      if (cleanData[field] !== undefined && cleanData[field] !== null) {
+        const value = cleanData[field]
+        if (typeof value === 'string') {
+          // Remove currency formatting and convert to number
+          cleanData[field] = Number(value.replace(/[^\d.-]/g, ''))
+        } else if (typeof value === 'number') {
+          // Already a number, keep it
+          cleanData[field] = value
+        } else if (value && typeof value === 'object' && 'toNumber' in value && typeof value.toNumber === 'function') {
+          // Handle objects with toNumber method
+          cleanData[field] = value.toNumber()
+        }
+      }
+    })
+    
+    let response
+    
+    if (isEditing.value && props.editingItem?.id) {
+      // Update existing asset
+      response = await $fetch(`/api/finance/assets/${props.editingItem.id}`, {
+        method: 'PATCH',
+        headers,
+        body: {
+          ...cleanData,
+          purchaseDate: cleanData.purchaseDate instanceof Date ? cleanData.purchaseDate.toISOString() : cleanData.purchaseDate,
+          warrantyExpiry: cleanData.warrantyExpiry instanceof Date ? cleanData.warrantyExpiry.toISOString() : cleanData.warrantyExpiry
+        }
+      })
+      toast.success('Asset updated successfully')
+    } else {
+      // Create new asset
+      response = await $fetch('/api/finance/assets', {
+        method: 'POST',
+        headers,
+        body: {
+          ...cleanData,
+          purchaseDate: cleanData.purchaseDate instanceof Date ? cleanData.purchaseDate.toISOString() : cleanData.purchaseDate,
+          warrantyExpiry: cleanData.warrantyExpiry instanceof Date ? cleanData.warrantyExpiry.toISOString() : cleanData.warrantyExpiry
+        }
+      })
+      toast.success('Asset created successfully')
+    }
+    
+    // Close modal and emit success
+    emit('update:modelValue', false)
+    emit('success', response)
+    
   } catch (error) {
     console.error('Error saving asset:', error)
-    toast.error('Failed to save asset')
+    
+    if ((error as any).status === 400) {
+      toast.error((error as any).data?.message || 'Invalid data provided')
+    } else if ((error as any).status === 401) {
+      toast.error('Please login to continue')
+    } else if ((error as any).status === 404) {
+      toast.error('Asset not found')
+    } else if ((error as any).status === 429) {
+      toast.error('Too many requests. Please try again later.')
+    } else {
+      toast.error('Failed to save asset. Please try again.')
+    }
+    
+    throw error
+  } finally {
+    isLoading.value = false
   }
 })
 
+// Watch for editing item changes to populate form
+watch(() => props.editingItem, (newEditingItem) => {
+  if (newEditingItem) {
+    setValues({
+      type: newEditingItem.type as 'REAL_ESTATE' | 'VEHICLE' | 'INVESTMENT' | 'CASH' | 'BANK_ACCOUNT' | 'DIGITAL_ASSET' | 'PRECIOUS_METAL' | 'OTHER',
+      name: newEditingItem.name,
+      description: newEditingItem.description || '',
+      purchasePrice: convertAmount(newEditingItem.purchasePrice),
+      currentValue: convertAmount(newEditingItem.currentValue) || 0,
+      purchaseDate: new Date(newEditingItem.purchaseDate),
+      depreciationRate: convertAmount(newEditingItem.depreciationRate) || 0,
+      location: newEditingItem.location || '',
+      serialNumber: newEditingItem.serialNumber || '',
+      warrantyExpiry: newEditingItem.warrantyExpiry ? new Date(newEditingItem.warrantyExpiry) : undefined,
+      insuranceInfo: newEditingItem.insuranceInfo || '',
+      notes: newEditingItem.notes || '',
+      tags: newEditingItem.tags || [],
+      attachments: []
+    })
+  } else if (!props.modelValue) {
+    // Reset form when not editing and modal is closed
+    resetForm()
+  }
+}, { immediate: true })
+
 // Watch for modal close to reset form
 watch(() => props.modelValue, (newValue) => {
-  if (!newValue) {
-    // Reset form when modal closes
-    // This would be handled by the form library
+  if (!newValue && !isEditing.value) {
+    // Reset form when modal closes and not in editing mode
+    resetForm()
   }
 })
 </script>

@@ -1,15 +1,27 @@
 <template>
   <div class="min-h-screen">
-    <div class="container mx-auto px-4 py-8" v-if="isDataLoaded">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Finance Dashboard
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400">
-          Manage your financial transactions, investments, debts, and assets
-        </p>
+    <div class="container mx-auto px-4 py-8">
+      <!-- Loading State -->
+      <div v-if="!isDataLoaded" class="flex items-center justify-center h-64">
+        <div class="text-center">
+          <ClientOnly>
+            <Icon name="ph:spinner" class="h-8 w-8 animate-spin text-gray-500 mx-auto mb-4" />
+          </ClientOnly>
+          <p class="text-gray-600 dark:text-gray-400">Loading finance data...</p>
+        </div>
       </div>
+      
+      <!-- Main Content -->
+      <div v-else>
+        <!-- Header -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Finance Dashboard
+          </h1>
+          <p class="text-gray-600 dark:text-gray-400">
+            Manage your financial transactions, investments, debts, and assets
+          </p>
+        </div>
 
       <!-- Financial Overview Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -18,7 +30,9 @@
             <UiCardTitle class="text-sm font-medium text-gray-600 dark:text-gray-400">
               Total Income
             </UiCardTitle>
-            <Icon name="ph:arrow-up-right" class="h-4 w-4 text-green-500" />
+            <ClientOnly>
+              <Icon name="ph:trend-up" class="h-4 w-4 text-green-500" />
+            </ClientOnly>
           </UiCardHeader>
           <UiCardContent>
             <div class="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -35,7 +49,9 @@
             <UiCardTitle class="text-sm font-medium text-gray-600 dark:text-gray-400">
               Total Expenses
             </UiCardTitle>
-            <Icon name="ph:arrow-down-right" class="h-4 w-4 text-red-500" />
+            <ClientOnly>
+              <Icon name="ph:trend-down" class="h-4 w-4 text-red-500" />
+            </ClientOnly>
           </UiCardHeader>
           <UiCardContent>
             <div class="text-2xl font-bold text-red-600 dark:text-red-400">
@@ -52,7 +68,9 @@
             <UiCardTitle class="text-sm font-medium text-gray-600 dark:text-gray-400">
               Cash Flow
             </UiCardTitle>
-            <Icon name="ph:cash" class="h-4 w-4 text-blue-500" />
+            <ClientOnly>
+              <Icon name="ph:cash" class="h-4 w-4 text-blue-500" />
+            </ClientOnly>
           </UiCardHeader>
           <UiCardContent>
             <div class="text-2xl font-bold" :class="getCashFlow >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
@@ -69,7 +87,9 @@
             <UiCardTitle class="text-sm font-medium text-gray-600 dark:text-gray-400">
               Net Worth
             </UiCardTitle>
-            <Icon name="ph:chart-line" class="h-4 w-4 text-purple-500" />
+            <ClientOnly>
+              <Icon name="ph:chart-line" class="h-4 w-4 text-purple-500" />
+            </ClientOnly>
           </UiCardHeader>
           <UiCardContent>
             <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
@@ -84,7 +104,7 @@
 
       <!-- Tabs Navigation -->
       <div class="mb-6">
-        <UiButtonGroup class="w-full md:w-auto" v-if="tabs.length > 0">
+        <UiButtonGroup class="w-full md:w-auto" v-if="tabs.length > 0" :key="tabsKey">
           <UiButton
             v-for="tab in tabs"
             :key="tab.id"
@@ -92,7 +112,9 @@
             :variant="activeTab === tab.id ? 'default' : 'ghost'"
             class="flex-1 md:flex-none"
           >
-            <Icon :name="tab.icon" class="h-4 w-4 mr-2" />
+            <ClientOnly v-if="tab.icon">
+              <Icon :name="tab.icon" class="h-4 w-4 mr-2" :key="tab.icon" />
+            </ClientOnly>
             {{ tab.label }}
             <span v-if="tab.count !== null && tab.count !== undefined" class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200">
               {{ tab.count }}
@@ -110,7 +132,9 @@
               Transactions
             </h2>
             <UiButton @click="showTransactionModal = true">
-              <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              <ClientOnly>
+                <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              </ClientOnly>
               Add Transaction
             </UiButton>
           </div>
@@ -122,16 +146,34 @@
                 Date Range
               </label>
               <div class="flex gap-2">
-                <UiVeeDatepicker
-                  v-model="dateRange.start"
-                  placeholder="Start date"
-                  @update:model-value="updateDateFilter"
-                />
-                <UiVeeDatepicker
-                  v-model="dateRange.end"
-                  placeholder="End date"
-                  @update:model-value="updateDateFilter"
-                />
+                <div class="flex w-full items-center justify-center">
+                  <UiDatepicker v-model="dateRange.start"  @update:model-value="updateDateFilter">
+                    <template #default="{ togglePopover }">
+                      <UiButton
+                        variant="outline"
+                        :class="[!dateRange.start && 'text-muted-foreground', 'w-[260px] justify-start text-left']"
+                        @click="togglePopover"
+                      >
+                        <Icon name="lucide:calendar" class="size-4" />
+                        {{ dateRange.start ? formatDate(dateRange.start) : "Select a date" }}
+                      </UiButton>
+                    </template>
+                  </UiDatepicker>
+                </div>
+                <div class="flex w-full items-center justify-center">
+                  <UiDatepicker v-model="dateRange.end"  @update:model-value="updateDateFilter">
+                      <template #default="{ togglePopover }">
+                        <UiButton
+                          variant="outline"
+                          :class="[!dateRange.end && 'text-muted-foreground', 'w-[260px] justify-start text-left']"
+                          @click="togglePopover"
+                        >
+                          <Icon name="lucide:calendar" class="size-4" />
+                          {{ dateRange.end ? formatDate(dateRange.end) : "Select a date" }}
+                        </UiButton>
+                      </template>
+                    </UiDatepicker>
+                </div>
               </div>
             </div>
             
@@ -175,7 +217,9 @@
               Investments
             </h2>
             <UiButton @click="showInvestmentModal = true">
-              <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              <ClientOnly>
+                <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              </ClientOnly>
               Add Investment
             </UiButton>
           </div>
@@ -233,7 +277,9 @@
               Debts
             </h2>
             <UiButton @click="showDebtModal = true">
-              <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              <ClientOnly>
+                <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              </ClientOnly>
               Add Debt
             </UiButton>
           </div>
@@ -290,7 +336,9 @@
               Assets
             </h2>
             <UiButton @click="showAssetModal = true">
-              <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              <ClientOnly>
+                <Icon name="ph:plus" class="h-4 w-4 mr-2" />
+              </ClientOnly>
               Add Asset
             </UiButton>
           </div>
@@ -386,36 +434,66 @@
         </div>
       </div>
 
+      <!-- Confirmation Modal -->
+      <UiConfirmDialog
+        :is-open="showConfirmDialog"
+        :title="confirmDialogTitle"
+        :description="confirmDialogDescription"
+        :variant="confirmDialogVariant"
+        confirm-text="Delete"
+        cancel-text="Cancel"
+        @update:is-open="(value) => showConfirmDialog = value"
+        @confirm="confirmDialogResolve?.(true)"
+        @cancel="confirmDialogResolve?.(false)"
+      />
+
       <!-- Modals -->
       <FinanceTransactionModal
         v-model="showTransactionModal"
         :categories="[...state.categories]"
-        @save="handleTransactionSave"
+        @success="handleTransactionSave"
       />
       
       <FinanceInvestmentModal
         v-model="showInvestmentModal"
-        @save="handleInvestmentSave"
+        @success="handleInvestmentSave"
       />
       
       <FinanceDebtModal
         v-model="showDebtModal"
-        @save="handleDebtSave"
+        @success="handleDebtSave"
       />
       
       <FinanceAssetModal
         v-model="showAssetModal"
-        @save="handleAssetSave"
+        @success="handleAssetSave"
       />
-    </div>
-    
-    <!-- Loading State -->
-    <div v-else class="container mx-auto px-4 py-8">
-      <div class="flex items-center justify-center min-h-[60vh]">
-        <div class="text-center">
-          <Icon name="svg-spinners:180-ring" class="h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <p class="text-gray-600 dark:text-gray-400">Loading finance data...</p>
-        </div>
+
+      <!-- Update Modals -->
+      <FinanceTransactionModal
+        v-model="showUpdateTransactionModal"
+        :categories="[...state.categories]"
+        :editing-item="currentEditingTransaction"
+        @success="handleUpdateTransactionSave"
+      />
+      
+      <FinanceInvestmentModal
+        v-model="showUpdateInvestmentModal"
+        :editing-item="currentEditingInvestment"
+        @success="handleUpdateInvestmentSave"
+      />
+      
+      <FinanceDebtModal
+        v-model="showUpdateDebtModal"
+        :editing-item="currentEditingDebt"
+        @success="handleUpdateDebtSave"
+      />
+      
+      <FinanceAssetModal
+        v-model="showUpdateAssetModal"
+        :editing-item="currentEditingAsset"
+        @success="handleUpdateAssetSave"
+      />
       </div>
     </div>
   </div>
@@ -477,7 +555,8 @@ definePageMeta({
 })
 
 // Composables
-const { state, fetchTransactions, fetchInvestments, fetchDebts, fetchAssets, getTotalIncome, getTotalExpenses, getNetWorth, getCashFlow, setDateRange, setTransactionTypeFilter, setSearchQuery, createTransaction, createInvestment, createDebt, createAsset, initializeFinanceData } = useFinance()
+const { $toast } = useNuxtApp()
+const { state, fetchTransactions, fetchInvestments, fetchDebts, fetchAssets, getTotalIncome, getTotalExpenses, getNetWorth, getCashFlow, setDateRange, setTransactionTypeFilter, setSearchQuery, createTransaction, createInvestment, createDebt, createAsset, deleteTransaction, deleteInvestment, deleteDebt, deleteAsset, initializeFinanceData, refreshTransactions, refreshInvestments, refreshDebts, refreshAssets } = useFinance()
 
 // Reactive state
 const activeTab = ref('transactions')
@@ -485,38 +564,74 @@ const showTransactionModal = ref(false)
 const showInvestmentModal = ref(false)
 const showDebtModal = ref(false)
 const showAssetModal = ref(false)
+
+// Update modal state
+const showUpdateTransactionModal = ref(false)
+const showUpdateInvestmentModal = ref(false)
+const showUpdateDebtModal = ref(false)
+const showUpdateAssetModal = ref(false)
+
+// Current editing items
+const currentEditingTransaction = ref<Transaction | null>(null)
+const currentEditingInvestment = ref<Investment | null>(null)
+const currentEditingDebt = ref<Debt | null>(null)
+const currentEditingAsset = ref<Asset | null>(null)
+
 const isDataLoaded = ref(false)
 const userId = useState<string>('auth:userId')
+const tabsKey = ref(0) // For forcing re-render of tabs
+
+// Confirmation dialog state
+const showConfirmDialog = ref(false)
+const confirmDialogTitle = ref('')
+const confirmDialogDescription = ref('')
+const confirmDialogVariant = ref<'default' | 'destructive'>('default')
+let confirmDialogResolve: ((confirmed: boolean) => void) | null = null
 
 // Filter state
 const dateRange = ref({ start: null, end: null })
 const selectedTransactionTypes = ref<string[]>([])
 const searchQuery = ref('')
 
+// Confirmation function
+const showConfirmation = (
+  title: string,
+  description: string,
+  variant: 'default' | 'destructive' = 'default'
+): Promise<boolean> => {
+  return new Promise((resolve) => {
+    confirmDialogTitle.value = title
+    confirmDialogDescription.value = description
+    confirmDialogVariant.value = variant
+    confirmDialogResolve = resolve
+    showConfirmDialog.value = true
+  })
+}
+
 // Tabs configuration
 const tabs = computed(() => [
   {
     id: 'transactions',
     label: 'Transactions',
-    icon: 'ph:arrows-left-right',
+    icon: 'ph:arrows-left-right', // Keep this but add defensive check
     count: state.transactions.length
   },
   {
     id: 'investments',
     label: 'Investments',
-    icon: 'ph:chart-line',
+    icon: 'ph:chart-line-up', // Changed to more standard icon
     count: state.investments.length
   },
   {
     id: 'debts',
     label: 'Debts',
-    icon: 'ph:credit-card',
+    icon: 'ph:credit-card', // Keep this but add defensive check
     count: state.debts.length
   },
   {
     id: 'assets',
     label: 'Assets',
-    icon: 'ph:house',
+    icon: 'ph:house-simple', // Changed to more standard icon
     count: state.assets.length
   },
   {
@@ -684,99 +799,35 @@ const transactionColumns: ColumnDef<Transaction>[] = [
     header: 'Category',
     cell: ({ row }) => {
       const category = row.getValue('category') as { name: string; color?: string; icon?: string } | undefined
-      if (!category) return 'N/A'
+      if (!category || !category.name) return 'N/A'
       return h('div', { class: 'flex items-center gap-2' }, [
         category.icon ? h('span', category.icon) : null,
         h('span', category.name)
       ])
     }
-  }
-]
-
-const investmentColumns: ColumnDef<Investment>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name'
   },
   {
-    accessorKey: 'type',
-    header: 'Type'
-  },
-  {
-    accessorKey: 'totalInvested',
-    header: 'Invested',
+    id: 'actions',
+    header: 'Actions',
     cell: ({ row }) => {
-      const totalInvested = row.getValue('totalInvested')
-      const amountValue = getAmountValue(totalInvested as number | { toNumber: () => number } | undefined)
-      return formatCurrency(amountValue)
+      const transaction = row.original
+      return h('div', { class: 'flex items-center gap-2' }, [
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0',
+          onClick: () => handleEditTransaction(transaction)
+        }, [
+          '✏️'
+        ]),
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 text-red-600 hover:text-red-700',
+          onClick: () => handleDeleteTransaction(transaction)
+        }, [
+          '🗑️'
+        ])
+      ])
     }
   },
-  {
-    accessorKey: 'currentValue',
-    header: 'Current Value',
-    cell: ({ row }) => {
-      const currentValue = row.getValue('currentValue')
-      const amountValue = getAmountValue(currentValue as number | { toNumber: () => number } | undefined)
-      return formatCurrency(amountValue)
-    }
-  },
-  {
-    accessorKey: 'purchaseDate',
-    header: 'Purchase Date',
-    cell: ({ row }) => formatDate(row.getValue('purchaseDate') as string)
-  }
-]
-
-const debtColumns: ColumnDef<Debt>[] = [
-  {
-    accessorKey: 'lenderName',
-    header: 'Lender'
-  },
-  {
-    accessorKey: 'principalAmount',
-    header: 'Principal',
-    cell: ({ row }) => {
-      const principalAmount = row.getValue('principalAmount')
-      const amountValue = getAmountValue(principalAmount as number | { toNumber: () => number } | undefined)
-      return formatCurrency(amountValue)
-    }
-  },
-  {
-    accessorKey: 'currentBalance',
-    header: 'Balance',
-    cell: ({ row }) => {
-      const currentBalance = row.getValue('currentBalance')
-      const amountValue = getAmountValue(currentBalance as number | { toNumber: () => number } | undefined)
-      return formatCurrency(amountValue)
-    }
-  },
-  {
-    accessorKey: 'interestRate',
-    header: 'Interest Rate',
-    cell: ({ row }) => {
-      const interestRate = row.getValue('interestRate')
-      if (!interestRate) return 'N/A'
-      const rateValue = getAmountValue(interestRate as number | { toNumber: () => number } | undefined)
-      return `${rateValue}%`
-    }
-  },
-  {
-    accessorKey: 'nextPaymentDate',
-    header: 'Next Payment',
-    cell: ({ row }) => {
-      const nextPaymentDate = row.getValue('nextPaymentDate') as string | undefined
-      return nextPaymentDate ? formatDate(nextPaymentDate) : 'N/A'
-    }
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-      const status = row.getValue('status') as string
-      const color = status === 'ACTIVE' ? 'green' : status === 'OVERDUE' ? 'red' : 'gray'
-      return h('span', { class: `inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-${color}-500 text-${color}-600` }, status)
-    }
-  }
+ 
 ]
 
 const assetColumns: ColumnDef<Asset>[] = [
@@ -814,6 +865,177 @@ const assetColumns: ColumnDef<Asset>[] = [
   {
     accessorKey: 'status',
     header: 'Status'
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const asset = row.original
+      return h('div', { class: 'flex items-center gap-2' }, [
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0',
+          onClick: () => handleEditAsset(asset)
+        }, [
+          '✏️'
+        ]),
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 text-red-600 hover:text-red-700',
+          onClick: () => handleDeleteAsset(asset)
+        }, [
+          '🗑️'
+        ])
+      ])
+    }
+  }
+]
+
+const investmentColumns: ColumnDef<Investment>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name'
+  },
+  {
+    accessorKey: 'type',
+    header: 'Type'
+  },
+  {
+    accessorKey: 'totalInvested',
+    header: 'Total Invested',
+    cell: ({ row }) => {
+      const totalInvested = row.getValue('totalInvested')
+      const amountValue = getAmountValue(totalInvested as number | { toNumber: () => number } | undefined)
+      return formatCurrency(amountValue)
+    }
+  },
+  {
+    accessorKey: 'currentValue',
+    header: 'Current Value',
+    cell: ({ row }) => {
+      const currentValue = row.getValue('currentValue')
+      const amountValue = getAmountValue(currentValue as number | { toNumber: () => number } | undefined)
+      return formatCurrency(amountValue)
+    }
+  },
+  {
+    accessorKey: 'purchaseDate',
+    header: 'Purchase Date',
+    cell: ({ row }) => formatDate(row.getValue('purchaseDate') as string)
+  },
+  {
+    accessorKey: 'isActive',
+    header: 'Status',
+    cell: ({ row }) => {
+      const isActive = row.getValue('isActive') as boolean
+      return h('span', { 
+        class: `inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${
+          isActive ? 'border-green-500 text-green-600' : 'border-gray-500 text-gray-600'
+        }` 
+      }, isActive ? 'Active' : 'Inactive')
+    }
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const investment = row.original
+      return h('div', { class: 'flex items-center gap-2' }, [
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0',
+          onClick: () => handleEditInvestment(investment)
+        }, [
+          '✏️'
+        ]),
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 text-red-600 hover:text-red-700',
+          onClick: () => handleDeleteInvestment(investment)
+        }, [
+          '🗑️'
+        ])
+      ])
+    }
+  }
+]
+
+const debtColumns: ColumnDef<Debt>[] = [
+  {
+    accessorKey: 'lenderName',
+    header: 'Lender'
+  },
+  {
+    accessorKey: 'principalAmount',
+    header: 'Principal Amount',
+    cell: ({ row }) => {
+      const principalAmount = row.getValue('principalAmount')
+      const amountValue = getAmountValue(principalAmount as number | { toNumber: () => number } | undefined)
+      return formatCurrency(amountValue)
+    }
+  },
+  {
+    accessorKey: 'currentBalance',
+    header: 'Current Balance',
+    cell: ({ row }) => {
+      const currentBalance = row.getValue('currentBalance')
+      const amountValue = getAmountValue(currentBalance as number | { toNumber: () => number } | undefined)
+      return formatCurrency(amountValue)
+    }
+  },
+  {
+    accessorKey: 'interestRate',
+    header: 'Interest Rate',
+    cell: ({ row }) => {
+      const interestRate = row.getValue('interestRate') as number | undefined
+      return interestRate ? `${interestRate}%` : 'N/A'
+    }
+  },
+  {
+    accessorKey: 'monthlyPayment',
+    header: 'Monthly Payment',
+    cell: ({ row }) => {
+      const monthlyPayment = row.getValue('monthlyPayment') as number | undefined
+      return monthlyPayment ? formatCurrency(monthlyPayment) : 'N/A'
+    }
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const status = row.getValue('status') as string
+      const color = {
+        'ACTIVE': 'border-green-500 text-green-600',
+        'PAID': 'border-blue-500 text-blue-600',
+        'OVERDUE': 'border-red-500 text-red-600',
+        'DEFAULTED': 'border-gray-500 text-gray-600'
+      }[status] || 'border-gray-500 text-gray-600'
+      return h('span', { 
+        class: `inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors ${color}` 
+      }, status)
+    }
+  },
+  {
+    accessorKey: 'startDate',
+    header: 'Start Date',
+    cell: ({ row }) => formatDate(row.getValue('startDate') as string)
+  },
+  {
+    id: 'actions',
+    header: 'Actions',
+    cell: ({ row }) => {
+      const debt = row.original
+      return h('div', { class: 'flex items-center gap-2' }, [
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0',
+          onClick: () => handleEditDebt(debt)
+        }, [
+          '✏️'
+        ]),
+        h('button', {
+          class: 'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 text-red-600 hover:text-red-700',
+          onClick: () => handleDeleteDebt(debt)
+        }, [
+          '🗑️'
+        ])
+      ])
+    }
   }
 ]
 
@@ -860,33 +1082,158 @@ const debouncedSearch = debounce(() => {
 }, 300)
 
 const handleTransactionSave = async (data: any) => {
-  await createTransaction(data)
-  showTransactionModal.value = false
+  // Modal already handled the API call, just refresh data
+  await fetchTransactions()
 }
 
 const handleInvestmentSave = async (data: any) => {
-  await createInvestment(data)
-  showInvestmentModal.value = false
+  // Modal already handled the API call, just refresh data
+  await fetchInvestments()
 }
 
 const handleDebtSave = async (data: any) => {
-  await createDebt(data)
-  showDebtModal.value = false
+  // Modal already handled the API call, just refresh data
+  await fetchDebts()
 }
 
 const handleAssetSave = async (data: any) => {
-  await createAsset(data)
-  showAssetModal.value = false
+  // Modal already handled the API call, just refresh data
+  await fetchAssets()
 }
+
+// Update save handlers - simplified since modals handle API calls
+const handleUpdateTransactionSave = async (data: any) => {
+  // Modal already handled the API call, just refresh data and reset state
+  currentEditingTransaction.value = null
+  await fetchTransactions()
+}
+
+const handleUpdateInvestmentSave = async (data: any) => {
+  // Modal already handled the API call, just refresh data and reset state
+  currentEditingInvestment.value = null
+  await fetchInvestments()
+}
+
+const handleUpdateDebtSave = async (data: any) => {
+  // Modal already handled the API call, just refresh data and reset state
+  currentEditingDebt.value = null
+  await fetchDebts()
+}
+
+const handleUpdateAssetSave = async (data: any) => {
+  // Modal already handled the API call, just refresh data and reset state
+  currentEditingAsset.value = null
+  await fetchAssets()
+}
+
+// Edit and Delete handlers
+const handleEditTransaction = (transaction: Transaction) => {
+  currentEditingTransaction.value = transaction
+  showUpdateTransactionModal.value = true
+}
+
+const handleDeleteTransaction = async (transaction: Transaction) => {
+  console.log('Delete transaction clicked:', transaction.id)
+  try {
+    const confirmed = await showConfirmation(
+      'Delete Transaction',
+      `Are you sure you want to delete "${transaction.description}"? This action cannot be undone.`,
+      'destructive'
+    )
+    console.log('Confirmation result:', confirmed)
+    if (confirmed) {
+      await deleteTransaction(transaction.id, true)
+      $toast.success('Transaction deleted successfully')
+    }
+  } catch (error) {
+    console.error('Failed to delete transaction:', error)
+    $toast.error('Failed to delete transaction')
+  }
+}
+
+const handleEditInvestment = (investment: Investment) => {
+  currentEditingInvestment.value = investment
+  showUpdateInvestmentModal.value = true
+}
+
+const handleDeleteInvestment = async (investment: Investment) => {
+  console.log('Delete investment clicked:', investment.id)
+  try {
+    const confirmed = await showConfirmation(
+      'Delete Investment',
+      `Are you sure you want to delete "${investment.name}"? This action cannot be undone.`,
+      'destructive'
+    )
+    console.log('Investment confirmation result:', confirmed)
+    if (confirmed) {
+      await deleteInvestment(investment.id, true)
+      $toast.success('Investment deleted successfully')
+    }
+  } catch (error) {
+    console.error('Failed to delete investment:', error)
+    $toast.error('Failed to delete investment')
+  }
+}
+
+const handleEditDebt = (debt: Debt) => {
+  currentEditingDebt.value = debt
+  showUpdateDebtModal.value = true
+}
+
+const handleDeleteDebt = async (debt: Debt) => {
+  console.log('Delete debt clicked:', debt.id)
+  try {
+    const confirmed = await showConfirmation(
+      'Delete Debt',
+      `Are you sure you want to delete debt from "${debt.lenderName}"? This action cannot be undone.`,
+      'destructive'
+    )
+    console.log('Debt confirmation result:', confirmed)
+    if (confirmed) {
+      await deleteDebt(debt.id, true)
+      $toast.success('Debt deleted successfully')
+    }
+  } catch (error) {
+    console.error('Failed to delete debt:', error)
+    $toast.error('Failed to delete debt')
+  }
+}
+
+const handleEditAsset = (asset: Asset) => {
+  currentEditingAsset.value = asset
+  showUpdateAssetModal.value = true
+}
+
+const handleDeleteAsset = async (asset: Asset) => {
+  console.log('Delete asset clicked:', asset.id)
+  try {
+    const confirmed = await showConfirmation(
+      'Delete Asset',
+      `Are you sure you want to delete "${asset.name}"? This action cannot be undone.`,
+      'destructive'
+    )
+    console.log('Asset confirmation result:', confirmed)
+    if (confirmed) {
+      await deleteAsset(asset.id, true)
+      $toast.success('Asset deleted successfully')
+    }
+  } catch (error) {
+    console.error('Failed to delete asset:', error)
+    $toast.error('Failed to delete asset')
+  }
+}
+
 
 // Lifecycle
 onMounted(async () => {
   try {
     await initializeFinanceData()
     isDataLoaded.value = true
+    tabsKey.value++ // Force re-render of tabs after data loads
   } catch (error) {
     console.error('Failed to initialize finance data:', error)
     isDataLoaded.value = true // Still set to true to allow rendering
+    tabsKey.value++ // Force re-render even on error
   }
 })
 </script>
